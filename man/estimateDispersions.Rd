@@ -26,7 +26,7 @@ for the type of fitting of dispersions to the mean intensity.
     via a robust gamma-family GLM. The coefficients \code{asymptDisp} and \code{extraPois}
     are given in the attribute \code{coefficients} of the \code{\link{dispersionFunction}}
     of the object.
-  \item local - use the locfit package to fit a local regression
+  \item local - use loess (base R) to fit a local regression
     of log dispersions over log base mean (normal scale means and dispersions
     are input and output for \code{\link{dispersionFunction}}). The points
     are weighted by normalized mean count in the local regression.

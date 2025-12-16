@@ -236,7 +236,6 @@
 #' 
 #' @import BiocGenerics BiocParallel S4Vectors IRanges GenomicRanges SummarizedExperiment Biobase Rcpp methods
 #'
-#' @importFrom locfit locfit
 #' @importFrom graphics axis hist plot points
 #' @importFrom stats Gamma as.formula coefficients df dnbinom dnorm formula glm loess lowess model.matrix optim p.adjust pchisq pnorm prcomp predict pt qf qnorm rchisq relevel rnbinom rnorm runif splinefun terms terms.formula approx
 #' @importFrom utils read.table read.csv askYesNo menu
@@ -2211,13 +2210,14 @@ parametricDispersionFit <- function( means, disps ) {
 
 # Local fit of dispersion to the mean intensity
 # fitting is done on log dispersion, log mean scale
+# Uses loess (base R) instead of locfit for WebAssembly compatibility
 localDispersionFit <- function( means, disps, minDisp ) {
   if (all(disps < minDisp*10)) {
     return(rep(minDisp,length(disps)))
   }
   d <- data.frame(logDisps = log(disps), logMeans = log(means))
-  fit <- locfit(logDisps ~ logMeans, data=d[disps >= minDisp*10,,drop=FALSE],
-                weights = means[disps >= minDisp*10])
+  fit <- loess(logDisps ~ logMeans, data=d[disps >= minDisp*10,,drop=FALSE],
+               weights = means[disps >= minDisp*10])
   dispFunction <- function(means) exp(predict(fit, data.frame(logMeans=log(means))))
   return(dispFunction)
 }
