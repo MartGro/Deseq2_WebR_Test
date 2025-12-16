@@ -2218,7 +2218,39 @@ localDispersionFit <- function( means, disps, minDisp ) {
   d <- data.frame(logDisps = log(disps), logMeans = log(means))
   fit <- loess(logDisps ~ logMeans, data=d[disps >= minDisp*10,,drop=FALSE],
                weights = means[disps >= minDisp*10])
-  dispFunction <- function(means) exp(predict(fit, data.frame(logMeans=log(means))))
+
+  # Get the range of fitted data and compute slopes for linear extrapolation
+  # This mimics locfit's extrapolation behavior
+  fit_range <- range(d$logMeans[disps >= minDisp*10])
+  fit_min_logMean <- fit_range[1]
+  fit_max_logMean <- fit_range[2]
+
+  # Get predictions at boundary points
+  fit_min_pred <- predict(fit, data.frame(logMeans = fit_min_logMean))
+  fit_max_pred <- predict(fit, data.frame(logMeans = fit_max_logMean))
+
+  # Compute slopes for linear extrapolation (small offset for numerical stability)
+  eps <- (fit_max_logMean - fit_min_logMean) * 0.01
+  left_slope <- (predict(fit, data.frame(logMeans = fit_min_logMean + eps)) - fit_min_pred) / eps
+  right_slope <- (predict(fit, data.frame(logMeans = fit_max_logMean - eps)) - fit_max_pred) / (-eps)
+
+  dispFunction <- function(means) {
+    logMeans <- log(means)
+    pred <- predict(fit, data.frame(logMeans = logMeans))
+
+    # Handle out-of-range predictions by linear extrapolation
+    below_range <- logMeans < fit_min_logMean
+    above_range <- logMeans > fit_max_logMean
+
+    if (any(below_range, na.rm=TRUE)) {
+      pred[below_range] <- fit_min_pred + left_slope * (logMeans[below_range] - fit_min_logMean)
+    }
+    if (any(above_range, na.rm=TRUE)) {
+      pred[above_range] <- fit_max_pred + right_slope * (logMeans[above_range] - fit_max_logMean)
+    }
+
+    exp(pred)
+  }
   return(dispFunction)
 }
 
