@@ -1,0 +1,26 @@
+name: Build DESeq2 for webR
+
+on:
+  push:
+    branches:
+      - main
+      - master
+      - webr-loess-compatibility
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+  repository-projects: read
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  deploy-cran-repo:
+    uses: r-wasm/actions/.github/workflows/deploy-cran-repo.yml@v2
+    with:
+      packages: "."
